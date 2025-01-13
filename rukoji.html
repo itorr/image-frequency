@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<title>Image to Frequency-based Grayscale</title>
+
+<script>
+const src = 'rukuji.png';
+
+// 灰度的深度图
+const depthSrc = 'rukuji-depth.png';
+
+const getImageElBySrc = src => new Promise((resolve) => {
+	const img = new Image();
+	img.src = src;
+	img.onload = () => resolve(img);
+});
+
+
+const genXYImageGrayData = (imageData) =>{
+	const { width, height, data } = imageData;
+	const grayData = new Uint8Array(width * height);
+	for(let i = 0; i < data.length; i+=4){
+		const r = data[i];
+		grayData[i/4] = r;
+
+		
+		// const g = data[i+1];
+		// const b = data[i+2];
+		// const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+		// grayData[i/4] = gray;
+	}
+	return grayData;
+
+}
+ 
+
+const run = async ()=>{
+	const img = await getImageElBySrc(src);
+	const depthImg = await getImageElBySrc(depthSrc);
+	const canvas = document.createElement('canvas');
+	const ctx = canvas.getContext('2d');
+	const width = img.width;
+	const height = img.height;
+	canvas.width = width;
+	canvas.height = height;
+
+	document.body.appendChild(canvas);
+
+	ctx.drawImage(img, 0, 0, width, height);
+	const imgData = ctx.getImageData(0, 0, width, height);
+
+	ctx.drawImage(depthImg, 0, 0, width, height);
+	const depthImgData = ctx.getImageData(0, 0, width, height);
+
+	console.log({imgData, depthImgData});
+
+
+	ctx.clearRect(0, 0, width, height);
+
+	const depthData = genXYImageGrayData(depthImgData);
+	let currentDepth = 0;
+
+	const DepthPixels = {};
+
+	// 按照深度整理像素点
+
+	for(let i = 0; i < depthData.length; i++){
+		const depth = depthData[i];
+		const x = i % width;
+		const y = Math.floor(i / width);
+		if(!DepthPixels[depth]){
+			DepthPixels[depth] = [];
+		}
+		DepthPixels[depth].push({
+			x,
+			y,
+			depth,
+		});
+	}
+
+	console.log(DepthPixels);
+
+	return;
+
+	const step = ()=>{
+		const radius = 255 - 0;
+
+		for(let i = 0;i< 1000;i++){
+			
+			// 
+			
+			ctx.globalAlpha = 0.2;
+			ctx.fillStyle = `rgb(${r},${g},${b})`;
+			
+			// 画圆 宽度根据 radius
+			ctx.beginPath();
+			ctx.arc(x, y, radius, 0, Math.PI * 2);
+			ctx.fill();
+		}
+
+
+		currentDepth += 1;
+		if(currentDepth >= 255) return;
+
+		setTimeout(step, 1000/60);
+	}
+
+	step();
+};
+
+run();
+
+
+</script>

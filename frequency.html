@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image to Frequency-based Grayscale</title>
+</head>
+
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fft.js/0.3.0/fft.min.js"></script>
+<script>
+
+
+const src = 'n.jpg';
+
+const getImageElBySrc = src => new Promise((resolve) => {
+	const img = new Image();
+	img.src = src;
+	img.onload = () => resolve(img);
+});
+
+
+getImageElBySrc(src).then(sourceImage => {
+	document.body.appendChild(sourceImage);
+
+	const canvas = document.createElement('canvas');
+	const ctx = canvas.getContext('2d');
+	canvas.width = sourceImage.naturalWidth;
+	canvas.height = sourceImage.naturalHeight;
+
+	document.body.appendChild(canvas);
+	// 绘制原始图像到canvas
+	ctx.drawImage(sourceImage, 0, 0);
+	const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+	const pixels = imageData.data;
+
+	// 获取图像宽度和高度（以像素为单位）
+	const width = canvas.width;
+	const height = canvas.height;
+
+	// 将图像数据转换为分辨率频率灰度图像数据
+	const grayPixels = new Uint8ClampedArray(width * height);
+	for (let y = 0; y < height; y++) {
+		for (let x = 0; x < width; x++) {
+			const index = (y * width + x) * 4;
+			const r = pixels[index];
+			const g = pixels[index + 1];
+			const b = pixels[index + 2];
+			const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+			// const gray = ( r + g + b ) / 3;
+			grayPixels[y * width + x] = gray;
+		}
+	}
+
+
+	
+
+	const frequencyImageData = new ImageData(frequencyPixels, width, height);
+	ctx.putImageData(frequencyImageData, 0, 0);
+});
+
+</script>
+</body>
+
+</html>
