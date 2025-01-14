@@ -49,7 +49,7 @@ getImageElBySrc(src).then(sourceImage => {
 
 	let currentPixels = pixels;
 
-	const blurredPixels = applyBlur(currentPixels, canvas.width, canvas.height, 18);
+	const blurredPixels = applyBlur(currentPixels, canvas.width, canvas.height, 8);
 	frequencyImages.push(blurredPixels);
 
 	// 用当前模糊后的图像减去前一次（更模糊）的图像，得到类似频率差异的图像
