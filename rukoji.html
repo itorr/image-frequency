@@ -35,6 +35,8 @@ const genXYImageGrayData = (imageData) =>{
 
 const run = async ()=>{
 	const img = await getImageElBySrc(src);
+	document.body.appendChild(img);
+
 	const depthImg = await getImageElBySrc(depthSrc);
 	const canvas = document.createElement('canvas');
 	const ctx = canvas.getContext('2d');
@@ -57,9 +59,19 @@ const run = async ()=>{
 	ctx.clearRect(0, 0, width, height);
 
 	const depthData = genXYImageGrayData(depthImgData);
-	let currentDepth = 0;
 
 	const DepthPixels = {};
+
+
+	const drawBlurArc = (x, y, radius, color, alpha) => {
+		ctx.globalAlpha = alpha;
+		ctx.fillStyle = color;
+		// 画圆
+		ctx.beginPath();
+		ctx.arc(x, y, radius, 0, Math.PI * 2);
+		ctx.fill();
+
+	}
 
 	// 按照深度整理像素点
 
@@ -77,29 +89,73 @@ const run = async ()=>{
 		});
 	}
 
-	console.log(DepthPixels);
 
-	return;
+	// ctx.globalAlpha = 0.1;
+	// // 随机画1000个圆
+	// for(let i = 0; i < 1000; i++){
+	// 	const x = Math.floor(Math.random() * width);
+	// 	const y = Math.floor(Math.random() * height);
+	// 	const pointIndex = y * width + x;
+	// 	const color = imgData.data.slice( pointIndex * 4, pointIndex * 4 + 3);
+	// 	ctx.fillStyle = `rgba(${color.join(',')})`;
+	// 	// 画圆
+	// 	ctx.beginPath();
+	// 	ctx.arc(x, y, 100, 0, Math.PI * 2);
+	// 	ctx.fill();
+	// }
 
+
+	const depthPixels = Object.entries(DepthPixels).sort((a, b) => a[0] - b[0]);
+
+	console.log({depthPixels});
+
+	let currentDepthsIndex = 0;
 	const step = ()=>{
-		const radius = 255 - 0;
-
-		for(let i = 0;i< 1000;i++){
-			
-			// 
-			
-			ctx.globalAlpha = 0.2;
-			ctx.fillStyle = `rgb(${r},${g},${b})`;
-			
-			// 画圆 宽度根据 radius
-			ctx.beginPath();
-			ctx.arc(x, y, radius, 0, Math.PI * 2);
-			ctx.fill();
+		const currentDepths = depthPixels[currentDepthsIndex];
+		if(!currentDepths){
+			// 清除透明
+			const imgData = ctx.getImageData(0, 0, width, height);
+			for(let i = 0; i < imgData.data.length; i+=4){
+				imgData.data[i+3] = 255;
+			}
+			ctx.putImageData(imgData, 0, 0);
+			return;
 		}
 
+		const depth = currentDepths[0];
 
-		currentDepth += 1;
-		if(currentDepth >= 255) return;
+		// 按照距离中心点距离排序
+		// const points = currentDepths[1].sort((a, b) => {
+		// 	const aDistance = Math.sqrt((a.x - width / 2) ** 2 + (a.y - height / 2) ** 2);
+		// 	const bDistance = Math.sqrt((b.x - width / 2) ** 2 + (b.y - height / 2) ** 2);
+		// 	return aDistance - bDistance;
+		// });
+
+		// 按照Y排序
+		// const points = currentDepths[1].sort((a, b) => {
+		// 	return a.y - b.y;
+		// });
+
+		// 乱序
+		const points = currentDepths[1].sort((a, b) => {
+			return Math.random() - 0.5;
+		});
+
+		const radius = (257 - depth) / 10;
+
+		for(let i = 0; i < points.length; i++){
+			const { x, y, depth } = points[i];
+			const pointIndex = y * width + x;
+			const rgb = imgData.data.slice( pointIndex * 4, pointIndex * 4 + 3);
+			const color = `rgb(${rgb.join(',')})`;
+
+			const alpha = depth / 255;
+			drawBlurArc(x, y, radius, color, alpha);
+
+		}
+		
+
+		currentDepthsIndex += 1;
 
 		setTimeout(step, 1000/60);
 	}
